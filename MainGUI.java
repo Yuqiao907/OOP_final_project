@@ -1,103 +1,119 @@
-
-import java.awt.EventQueue;
-import javax.swing.*;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 public class MainGUI extends JFrame {
 
-	private JPanel contentPane;
-	private JButton btnAddNew;
-	private JButton btnSearch;
-	private JButton btnBrowse;
-	private JButton btnManageFolders;
-	private JButton btnSorting;
+    private JPanel contentPane;
 
-	private LiteratureManager manager = new LiteratureManager();
+    private JButton btnAdd;
+    private JButton btnView;
+    private JButton btnSearch;
+    private JButton btnEdit;
+    private JButton btnDelete;
+    private JButton btnFolders;
+    private JButton btnExit;
 
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					MainGUI frame = new MainGUI();
-					frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
-	}
+    private LiteratureManager manager;
 
-	public MainGUI() {
-		setTitle("Literature Manager");
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 260, 390);
+    public MainGUI(LiteratureManager manager) {
 
-		contentPane = new JPanel();
-		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
-		setContentPane(contentPane);
-		contentPane.setLayout(null);
+        /*
+         * MainGUI is the central interaction layer.
+         * It gives the user access to all major project use cases from one window.
+         */
+        this.manager = manager;
 
-		btnAddNew = new JButton("Add New");
-		btnAddNew.setBounds(55, 35, 140, 30);
-		contentPane.add(btnAddNew);
+        setTitle("Personal Literature Management System");
+        setBounds(100, 100, 520, 430);
 
-		btnSearch = new JButton("Search");
-		btnSearch.setBounds(55, 90, 140, 30);
-		contentPane.add(btnSearch);
+        contentPane = new JPanel();
+        contentPane.setBorder(new EmptyBorder(10, 10, 10, 10));
+        setContentPane(contentPane);
+        contentPane.setLayout(null);
 
-		btnBrowse = new JButton("Browse");
-		btnBrowse.setBounds(55, 145, 140, 30);
-		contentPane.add(btnBrowse);
+        JLabel lblTitle = new JLabel("Personal Literature Management System");
+        lblTitle.setBounds(105, 25, 330, 30);
+        contentPane.add(lblTitle);
 
-		btnManageFolders = new JButton("Manage Folders");
-		btnManageFolders.setBounds(55, 200, 140, 30);
-		contentPane.add(btnManageFolders);
+        btnAdd = new JButton("Add Literature");
+        btnAdd.setBounds(155, 75, 190, 35);
+        contentPane.add(btnAdd);
 
-		btnSorting = new JButton("Sorting");
-		btnSorting.setBounds(55, 255, 140, 30);
-		contentPane.add(btnSorting);
+        btnView = new JButton("View / Sort Literature");
+        btnView.setBounds(155, 120, 190, 35);
+        contentPane.add(btnView);
 
-		btnAddNew.setFocusable(false);
-		btnSearch.setFocusable(false);
-		btnBrowse.setFocusable(false);
-		btnManageFolders.setFocusable(false);
-		btnSorting.setFocusable(false);
+        btnSearch = new JButton("Search Literature");
+        btnSearch.setBounds(155, 165, 190, 35);
+        contentPane.add(btnSearch);
 
-		btnAddNew.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				AddLiteratureGUI addGUI = new AddLiteratureGUI(manager);
-				addGUI.setVisible(true);
-			}
-		});
+        btnEdit = new JButton("Edit Literature");
+        btnEdit.setBounds(155, 210, 190, 35);
+        contentPane.add(btnEdit);
 
-		btnSearch.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				SearchGUI searchGUI = new SearchGUI(manager);
-				searchGUI.setVisible(true);
-			}
-		});
+        btnDelete = new JButton("Delete Literature");
+        btnDelete.setBounds(155, 255, 190, 35);
+        contentPane.add(btnDelete);
 
-		btnBrowse.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				BrowseGUI browseGUI = new BrowseGUI(manager);
-				browseGUI.setVisible(true);
-			}
-		});
+        btnFolders = new JButton("Manage Folders");
+        btnFolders.setBounds(155, 300, 190, 35);
+        contentPane.add(btnFolders);
 
-		btnManageFolders.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				FolderGUI folderGUI = new FolderGUI(manager);
-				folderGUI.setVisible(true);
-			}
-		});
+        btnExit = new JButton("Exit");
+        btnExit.setBounds(155, 345, 190, 35);
+        contentPane.add(btnExit);
 
-		btnSorting.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				SortingGUI sortingGUI = new SortingGUI(manager);
-				sortingGUI.setVisible(true);
-			}
-		});
-	}
+        btnAdd.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                AddLiteratureGUI frame = new AddLiteratureGUI(manager);
+                frame.setVisible(true);
+            }
+        });
+
+        btnView.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                ViewLiteratureGUI frame = new ViewLiteratureGUI(manager);
+                frame.setVisible(true);
+            }
+        });
+
+        btnSearch.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                SearchLiteratureGUI frame = new SearchLiteratureGUI(manager);
+                frame.setVisible(true);
+            }
+        });
+
+        btnEdit.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                EditLiteratureGUI frame = new EditLiteratureGUI(manager);
+                frame.setVisible(true);
+            }
+        });
+
+        btnDelete.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                DeleteLiteratureGUI frame = new DeleteLiteratureGUI(manager);
+                frame.setVisible(true);
+            }
+        });
+
+        btnFolders.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                FolderGUI frame = new FolderGUI(manager);
+                frame.setVisible(true);
+            }
+        });
+
+        btnExit.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0);
+            }
+        });
+    }
 }
