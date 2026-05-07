@@ -1,168 +1,360 @@
-
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class LiteratureManager {
 
-	private ArrayList<Literature> records;
-	private ArrayList<String> folderList;
+    /*
+     * records stores all literature records in a dynamic list.
+     * This follows the proposal's requirement that dynamic lists are used
+     * for record storage.
+     */
+    private ArrayList<Literature> records;
 
-	public LiteratureManager() {
-		records = new ArrayList<Literature>();
-		folderList = new ArrayList<String>();
-	}
+    /*
+     * folderMap stores folder names as keys and the list of literature records
+     * in each folder as values.
+     *
+     * This follows the proposal's requirement that associative maps are used
+     * for folder tracking.
+     */
+    private HashMap<String, ArrayList<Literature>> folderMap;
 
-	public void addLiterature(Literature lit) {
-		records.add(lit);
+    public LiteratureManager() {
+        records = new ArrayList<Literature>();
+        folderMap = new HashMap<String, ArrayList<Literature>>();
+    }
 
-		String folder = lit.getSubject();
-		if (folder.length() > 0 && !folderList.contains(folder)) {
-			folderList.add(folder);
-		}
-	}
+    public boolean addLiterature(Literature lit) {
 
-	public ArrayList<Literature> getRecords() {
-		return records;
-	}
+        /*
+         * This method implements high-fidelity record ingestion.
+         * A new literature object is added only if it is not null
+         * and has a non-empty title.
+         */
+        if (lit == null) {
+            return false;
+        }
 
-	public ArrayList<String> getFolderList() {
-		return folderList;
-	}
+        if (lit.getTitle() == null || lit.getTitle().trim().length() == 0) {
+            return false;
+        }
 
-	public Literature findByTitle(String title) {
-		for (Literature lit : records) {
-			if (lit.getTitle().equalsIgnoreCase(title)) {
-				return lit;
-			}
-		}
-		return null;
-	}
+        records.add(lit);
 
-	public ArrayList<Literature> searchByTitleKeyword(String keyword) {
-		ArrayList<Literature> result = new ArrayList<Literature>();
+        /*
+         * The literature record is also mapped to its subject folder.
+         * This supports the proposal's entity-to-category mapping requirement.
+         */
+        addRecordToFolderMap(lit, lit.getSubjectFolder());
 
-		for (Literature lit : records) {
-			if (lit.getTitle().toLowerCase().contains(keyword.toLowerCase())) {
-				result.add(lit);
-			}
-		}
+        return true;
+    }
 
-		return result;
-	}
+    public ArrayList<Literature> getRecords() {
+        return records;
+    }
 
-	public boolean deleteByTitle(String title) {
-		Literature lit = findByTitle(title);
+    public ArrayList<String> getFolderList() {
 
-		if (lit != null) {
-			records.remove(lit);
-			return true;
-		}
+        /*
+         * The GUI needs a simple list of folder names.
+         * The folder names are the keys of the HashMap.
+         */
+        return new ArrayList<String>(folderMap.keySet());
+    }
 
-		return false;
-	}
+    public Literature findByTitle(String title) {
 
-	public void createFolder(String folder) {
-		if (folder.length() > 0 && !folderList.contains(folder)) {
-			folderList.add(folder);
-		}
-	}
+        /*
+         * This method supports exact-title lookup.
+         * It is used by edit, delete, and assignment operations.
+         */
+        if (title == null) {
+            return null;
+        }
 
-	public boolean deleteFolder(String folder) {
-		if (!folderList.contains(folder)) {
-			return false;
-		}
+        for (Literature lit : records) {
+            if (lit.getTitle().equalsIgnoreCase(title.trim())) {
+                return lit;
+            }
+        }
 
-		folderList.remove(folder);
+        return null;
+    }
 
-		for (int i = records.size() - 1; i >= 0; i--) {
-			if (records.get(i).getSubject().equalsIgnoreCase(folder)) {
-				records.remove(i);
-			}
-		}
+    public ArrayList<Literature> searchByTitleKeyword(String keyword) {
 
-		return true;
-	}
+        /*
+         * This method implements query-based information retrieval.
+         * It searches title string patterns only, exactly as required
+         * by the proposal.
+         */
+        ArrayList<Literature> result = new ArrayList<Literature>();
 
-	public void sortByTitle() {
-		records.sort((a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()));
-	}
+        if (keyword == null) {
+            return result;
+        }
 
-	public void sortByYear() {
-		records.sort((a, b) -> b.getYear() - a.getYear());
-	}
+        for (Literature lit : records) {
+            if (lit.getTitle().toLowerCase().contains(keyword.toLowerCase().trim())) {
+                result.add(lit);
+            }
+        }
 
-	// These methods are kept for the old Main.java CLI version
+        return result;
+    }
 
-	public void viewAllLiterature() {
-		if (records.size() == 0) {
-			System.out.println("No literature records found.");
-			return;
-		}
+    public boolean editByTitle(String oldTitle, String newTitle, String newDoi,
+                               String newAuthor, int newYear, String newSubjectFolder) {
 
-		for (int i = 0; i < records.size(); i++) {
-			System.out.println("\nRecord " + (i + 1));
-			System.out.println(records.get(i));
-		}
-	}
+        /*
+         * This method implements the Update part of CRUD.
+         * The old title identifies the record to be updated.
+         */
+        Literature lit = findByTitle(oldTitle);
 
-	public void searchAndPrintByTitle(String keyword) {
-		ArrayList<Literature> result = searchByTitleKeyword(keyword);
+        if (lit == null) {
+            return false;
+        }
 
-		if (result.size() == 0) {
-			System.out.println("No matching literature found.");
-			return;
-		}
+        String oldFolder = lit.getSubjectFolder();
 
-		for (Literature lit : result) {
-			System.out.println("\n" + lit);
-		}
-	}
+        lit.setTitle(newTitle);
+        lit.setDoi(newDoi);
+        lit.setAuthor(newAuthor);
+        lit.setYear(newYear);
+        lit.setSubjectFolder(newSubjectFolder);
 
-	public boolean editByTitle(String oldTitle, String newTitle, String newDoi, String newAuthor, int newYear,
-			String newSubject) {
-		Literature lit = findByTitle(oldTitle);
+        /*
+         * Because the folder may have changed, the folder map must be updated.
+         * This keeps the literature object and folder tracking structure consistent.
+         */
+        removeRecordFromFolderMap(lit, oldFolder);
+        addRecordToFolderMap(lit, newSubjectFolder);
 
-		if (lit == null) {
-			return false;
-		}
+        return true;
+    }
 
-		lit.setTitle(newTitle);
-		lit.setDoi(newDoi);
-		lit.setAuthor(newAuthor);
-		lit.setYear(newYear);
-		lit.setSubject(newSubject);
+    public boolean deleteByTitle(String title) {
 
-		createFolder(newSubject);
+        /*
+         * This method implements the Delete part of CRUD.
+         * It removes the literature record from the main list and from the folder map.
+         */
+        Literature lit = findByTitle(title);
 
-		return true;
-	}
+        if (lit == null) {
+            return false;
+        }
 
-	public void createSubjectFolder(String subject) {
-		createFolder(subject);
-	}
+        records.remove(lit);
+        removeRecordFromFolderMap(lit, lit.getSubjectFolder());
 
-	public void viewSubjectFolders() {
-		if (folderList.size() == 0) {
-			System.out.println("No subject folders found.");
-			return;
-		}
+        return true;
+    }
 
-		for (String folder : folderList) {
-			System.out.println("- " + folder);
-		}
-	}
+    public void sortByTitle() {
 
-	public void viewBySubject(String subject) {
-		boolean found = false;
+        /*
+         * This method implements algorithmic metadata sorting
+         * by alphabetical title order.
+         */
+        records.sort((a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()));
+    }
 
-		for (Literature lit : records) {
-			if (lit.getSubject().equalsIgnoreCase(subject)) {
-				System.out.println("\n" + lit);
-				found = true;
-			}
-		}
+    public void sortByYearAscending() {
 
-		if (!found) {
-			System.out.println("No literature found in this folder.");
-		}
-	}
+        /*
+         * This method implements chronological sorting from oldest to newest.
+         */
+        records.sort((a, b) -> a.getYear() - b.getYear());
+    }
+
+    public void sortByYearDescending() {
+
+        /*
+         * This method implements chronological sorting from newest to oldest.
+         */
+        records.sort((a, b) -> b.getYear() - a.getYear());
+    }
+
+    public void createFolder(String folder) {
+
+        /*
+         * This method implements hierarchical taxonomy administration.
+         * It creates a new subject folder if it does not already exist.
+         */
+        if (folder == null) {
+            return;
+        }
+
+        folder = folder.trim();
+
+        if (folder.length() > 0 && !folderMap.containsKey(folder)) {
+            folderMap.put(folder, new ArrayList<Literature>());
+        }
+    }
+
+    public boolean deleteFolder(String folder) {
+
+        /*
+         * This method deletes a subject folder category.
+         *
+         * Important design choice:
+         * It does NOT delete literature records inside that folder.
+         * The proposal describes the system as a metadata repository.
+         * Therefore, deleting a folder should not destroy stored bibliographic metadata.
+         *
+         * Instead, records in the deleted folder become unassigned.
+         */
+        if (folder == null) {
+            return false;
+        }
+
+        folder = folder.trim();
+
+        if (!folderMap.containsKey(folder)) {
+            return false;
+        }
+
+        for (Literature lit : records) {
+            if (lit.getSubjectFolder().equalsIgnoreCase(folder)) {
+                lit.setSubjectFolder("");
+            }
+        }
+
+        folderMap.remove(folder);
+        return true;
+    }
+
+    public boolean assignLiteratureToFolder(String title, String folder) {
+
+        /*
+         * This method implements entity-to-category mapping.
+         * A literature record can be assigned to a selected subject folder.
+         */
+        Literature lit = findByTitle(title);
+
+        if (lit == null) {
+            return false;
+        }
+
+        String oldFolder = lit.getSubjectFolder();
+
+        lit.setSubjectFolder(folder);
+
+        removeRecordFromFolderMap(lit, oldFolder);
+        addRecordToFolderMap(lit, folder);
+
+        return true;
+    }
+
+    public ArrayList<Literature> getRecordsByFolder(String folder) {
+
+        /*
+         * This method retrieves all literature records inside one folder.
+         * It supports rapid retrieval of categorized academic assets.
+         */
+        ArrayList<Literature> result = new ArrayList<Literature>();
+
+        if (folder == null) {
+            return result;
+        }
+
+        folder = folder.trim();
+
+        if (folderMap.containsKey(folder)) {
+            result.addAll(folderMap.get(folder));
+        }
+
+        return result;
+    }
+
+    public String getAllLiteratureText() {
+
+        /*
+         * This method implements aggregated metadata visualization.
+         * It returns all records in a readable text format for the GUI.
+         */
+        if (records.size() == 0) {
+            return "No literature records found.";
+        }
+
+        String text = "";
+
+        for (int i = 0; i < records.size(); i++) {
+            text += "Record " + (i + 1) + "\n";
+            text += records.get(i).toDisplayString() + "\n";
+            text += "------------------------------\n";
+        }
+
+        return text;
+    }
+
+    public String getFolderText() {
+
+        /*
+         * This method returns all subject folders for folder auditing.
+         */
+        ArrayList<String> folders = getFolderList();
+
+        if (folders.size() == 0) {
+            return "No subject folders found.";
+        }
+
+        String text = "";
+
+        for (String folder : folders) {
+            text += "- " + folder + "\n";
+        }
+
+        return text;
+    }
+
+    private void addRecordToFolderMap(Literature lit, String folder) {
+
+        /*
+         * Private helper method.
+         * It centralizes folder insertion logic so public methods do not duplicate code.
+         */
+        if (folder == null) {
+            return;
+        }
+
+        folder = folder.trim();
+
+        if (folder.length() == 0) {
+            return;
+        }
+
+        createFolder(folder);
+
+        ArrayList<Literature> list = folderMap.get(folder);
+
+        if (!list.contains(lit)) {
+            list.add(lit);
+        }
+    }
+
+    private void removeRecordFromFolderMap(Literature lit, String folder) {
+
+        /*
+         * Private helper method.
+         * It keeps the HashMap consistent when a record is edited, deleted,
+         * or reassigned.
+         */
+        if (folder == null) {
+            return;
+        }
+
+        folder = folder.trim();
+
+        if (folder.length() == 0) {
+            return;
+        }
+
+        if (folderMap.containsKey(folder)) {
+            folderMap.get(folder).remove(lit);
+        }
+    }
 }
